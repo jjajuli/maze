@@ -215,7 +215,7 @@ class PathEditorGame(tk.Tk):
 
 
 def main():
-    app = PathEditorGame(rows=4, cols=6, cell_size=36)
+    app = PathEditorGame(rows=7, cols=7, cell_size=36)
     app.mainloop()
 
 

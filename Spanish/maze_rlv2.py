@@ -54,7 +54,7 @@ class MazeCore:
       "path": [[r,c], ...]
     }
     """
-    def __init__(self, rows=12, cols=16, start=(0,0), goal=None, path: Optional[List[Cell]]=None):
+    def __init__(self, rows=7, cols=7, start=(0,0), goal=None, path: Optional[List[Cell]]=None):
         self.rows = rows
         self.cols = cols
         self.start: Cell = tuple(start)
@@ -97,9 +97,9 @@ class MazeCore:
         """
         deltas = [(-1,0),(1,0),(0,-1),(0,1)]
         dr, dc = deltas[int(action)]
-        prev = self.player
-        nr = prev[0] + dr
-        nc = prev[1] + dc
+        prev = self.player # posición Actual antes del paso
+        nr = prev[0] + dr  # nueva fila (new row) = fila anterior + cambio de fila
+        nc = prev[1] + dc  # nueva columna (new col) = columna anterior + cambio de columna
         nxt = (nr, nc)
 
         fell = False

@@ -44,7 +44,7 @@ class MazeCore:
       "path": [[r,c], ...]
     }
     """
-    def __init__(self, rows=12, cols=16, start=(0,0), goal=None, path: Optional[List[Cell]]=None):
+    def __init__(self, rows=7, cols=7, start=(0,0), goal=None, path: Optional[List[Cell]]=None):
         self.rows = rows
         self.cols = cols
         self.start: Cell = tuple(start)

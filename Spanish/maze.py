@@ -8,7 +8,7 @@ from typing import List, Tuple, Set, Dict, Any
 Cell = Tuple[int, int]
 
 class MazeGame(tk.Tk):
-    def __init__(self, rows: int = 12, cols: int = 16, cell_size: int = 36):
+    def __init__(self, rows: int = 7, cols: int = 7, cell_size: int = 36):
         super().__init__()
         self.title("Laberinto Invisible")
         self.resizable(False, False)
@@ -320,7 +320,7 @@ class MazeGame(tk.Tk):
 
 
 def main():
-    app = MazeGame(rows=12, cols=16, cell_size=36)
+    app = MazeGame(rows=7, cols=7, cell_size=36)
     app.mainloop()
 
 if __name__ == "__main__":

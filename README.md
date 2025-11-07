@@ -52,4 +52,4 @@ A minimal puzzle game built with Python’s `tkinter`. Players navigate from a s
 
 ```bash
 # Python 3.10+ recommended (tkinter comes with most CPython installers)
-python invisible_maze.py
+python maze.py

@@ -14,16 +14,23 @@ Cell = Tuple[int, int]
 Cómo usarlo
 
 # Entrenar con un laberinto aleatorio (sin Tk, rápido):
-python maze_rl.py --train --algo PPO --steps 200000
+python maze_rlv2.py --train --algo PPO --steps 200000
 
 # Entrenar usando tu archivo JSON:
-python maze_rl.py --train --algo DQN --steps 300000 --json paths/path_20251104_145523.json
+python maze_rlv2.py --train --algo DQN --steps 300000 --json paths/path_20251104_145523.json
 
 # Elegir una función de recompensa (por ID):
-python maze_rl.py --train --algo PPO --reward_id 2 --steps 200000 --json paths/path_20251104_145523.json
+python maze_rlv2.py --train --algo PPO --reward_id 2 --steps 200000 --json paths/path_20251104_145523.json
 
 # Evaluar el modelo (con render ASCII en consola):
-python maze_rl.py --eval --model model_PPO_01_path_20251104_145523.zip --json paths/path_20251104_145523.json --render
+python maze_rlv2.py --eval --model model_PPO_01_path_20251104_145523.zip --json paths/path_20251104_145523.json --render
+
+# Reproducir modelo sobre un laberinto JSON específico
+python viewer_tk.py --model model_DQN_01_path7x7_20251106_154816.zip --json .\paths\path7x7_20251106_154816.json
+
+# O sin JSON (usa filas/cols por defecto)
+python viewer_tk.py --model maze_model.zip --rows 12 --cols 16 --cell 36
+
 """
 
 # -----------------------------

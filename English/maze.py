@@ -9,7 +9,7 @@ Cell = Tuple[int, int]
 
 
 class InvisibleMazeGame(tk.Tk):
-    def __init__(self, rows: int = 12, cols: int = 16, cell_size: int = 36):
+    def __init__(self, rows: int = 7, cols: int = 7, cell_size: int = 36):
         super().__init__()
         self.title("Invisible Maze")
         self.resizable(False, False)
@@ -302,7 +302,7 @@ class InvisibleMazeGame(tk.Tk):
 
 
 def main():
-    app = InvisibleMazeGame(rows=12, cols=16, cell_size=36)
+    app = InvisibleMazeGame(rows=7, cols=7, cell_size=36)
     app.mainloop()
 
 

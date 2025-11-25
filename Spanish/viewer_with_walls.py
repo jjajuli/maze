@@ -8,7 +8,7 @@ from typing import Optional
 # --- Ajusta este import según dónde esté definida tu clase MazeGame ---
 # Si tu MazeGame vive en otro archivo (p.ej. maze_gui.py), cámbialo a:
 # from maze_gui import MazeGame
-from maze import MazeGame  # <-- Si pegas MazeGame arriba de este archivo, funcionará.
+from maze_with_walls import MazeGame  # <-- Si pegas MazeGame arriba de este archivo, funcionará.
 # ----------------------------------------------------------------------
 
 import numpy as np
@@ -176,6 +176,30 @@ def main():
 
     # Arranca el runner con animación
     runner = TkPolicyRunner(app, model, delay_ms=args.delay, max_steps=args.max_steps)
+    
+    # Siempre izquierda (para pruebas)
+    left = TkPolicyRunner(app, model, delay_ms=args.delay, max_steps=args.max_steps)
+
+    def always_left_tick(next_step: int):
+        # intentar paso a la izquierda, si no se puede, rotar 90 grados en sentido horario
+        if not left._running:
+            return
+        # Acción 3 = izquierda
+        info = apply_action_to_game(left.game, next_step)
+        left._steps += 1
+        if info["reached_goal"]:
+            print(f"¡Meta alcanzada en {left._steps} pasos! Caídas totales mostradas en la UI.")
+            left._running = False
+            return
+        elif info["fell"]:
+            # girar 90 grados a la derecha (intentar ir hacia arriba en el próximo tick)
+            next_step = (next_step + 1) % 4
+        left.game.after(left.delay_ms, always_left_tick, next_step)
+
+
+    def always_right_tick(next_step: int):
+ 
+
 
     # Botón extra en la UI para reproducir/pausar
     import tkinter as tk
@@ -186,10 +210,18 @@ def main():
     pause_btn = tk.Button(ctrl_frame, text="⏸ Pausa", command=runner.toggle)
     reset_btn = tk.Button(ctrl_frame, text="↺ Reset", command=runner.reset)
     quit_btn = tk.Button(ctrl_frame, text="✕ Salir", command=runner.quit)
+    left_btn = tk.Button(ctrl_frame, text="▶ Siempre Izquierda", command=left.start)
+    right_btn = tk.Button(ctrl_frame, text="▶ Siempre Derecha", command=right.start)
+    random_btn = tk.Button(ctrl_frame, text="▶ Aleatorio", command=runner.start)
+
     play_btn.grid(row=0, column=0, padx=4)
     pause_btn.grid(row=0, column=1, padx=4)
     reset_btn.grid(row=0, column=2, padx=4)
     quit_btn.grid(row=0, column=3, padx=4)
+    left_btn.grid(row=0, column=4, padx=4)
+    right_btn.grid(row=0, column=5, padx=4)
+    random_btn.grid(row=0, column=6, padx=4)
+
 
     # Arranca el mainloop de Tk
     app.mainloop()

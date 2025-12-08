@@ -1,9 +1,10 @@
+from time import sleep
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import json
 import os
 import random
-from datetime import datetime
+from datetime import datetime, time
 from typing import List, Tuple, Set, Dict, Any
 
 # ---------------------------------------------------------
@@ -162,9 +163,12 @@ class MazeGame(tk.Tk):
         history_title = tk.Label(self.side_frame, text="Historial de intentos", font=("Helvetica", 10, "bold"))
         history_title.pack(anchor="w", padx=8, pady=(8, 2))
 
-        # Listbox donde se muestra el resumen de cada intento
-        self.history_listbox = tk.Listbox(self.side_frame, width=36, height=14)
+        # Listbox donde se muestra el resumen de cada intento con capacidad de scroll con desplazamiento automático 
+        self.history_scrollbar = tk.Scrollbar(self.side_frame, orient="vertical")
+        self.history_scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=(0, 6))
+        self.history_listbox = tk.Listbox(self.side_frame, width=36, height=14, yscrollcommand=self.history_scrollbar.set)
         self.history_listbox.pack(anchor="w", padx=8, pady=(0, 6))
+        self.history_scrollbar.config(command=self.history_listbox.yview)
 
         # Botón para limpiar el historial sin cambiar el laberinto
         self.clear_history_btn = tk.Button(self.side_frame, text="Limpiar historial", command=self.clear_history)
@@ -726,7 +730,34 @@ class MazeGame(tk.Tk):
         """
         Espacio reservado para la funcionalidad futura asociada a Boton1.
         """
-        messagebox.showinfo("Boton1", "Espacio reservado para una función futura (Boton1).")
+        # loop infinito de movimientos aleatorios como ejemplo
+        while True:
+            movement = random.randint(0, 3)
+            match movement:
+                case 0:  # Up
+                    self.try_move((-1, 0))
+                    self.history_listbox.insert(tk.END, "UP")
+                case 1:  # Right
+                    self.try_move((0, 1))
+                    self.history_listbox.insert(tk.END, "RIGHT")
+                case 2:  # Down
+                    self.try_move((1, 0))
+                    self.history_listbox.insert(tk.END, "DOWN")
+                case 3:  # Left
+                    self.try_move((0, -1))
+                    self.history_listbox.insert(tk.END, "LEFT")
+            
+            self.history_listbox.see(tk.END)
+            # pausa para ver los movimientos    
+            self.update()
+            self.after(200) 
+            # Chequeo si llegó a la meta para salir del loop
+            if self.player == self.goal:
+                print("Llegó a la meta")
+                break
+            
+
+        #messagebox.showinfo("Boton1", "Espacio reservado para una función futura (Boton1).")
 
     def on_boton2(self):
         """

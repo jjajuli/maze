@@ -1,5 +1,6 @@
 from time import sleep
 import tkinter as tk
+from tkinter import font as tkfont 
 from tkinter import messagebox, filedialog
 import json
 import os
@@ -34,7 +35,7 @@ class MazeGame(tk.Tk):
     - Se pueden cargar laberintos desde archivos JSON generados por el editor.
     """
 
-    def __init__(self, rows: int = 5, cols: int = 5, cell_size: int = 36):
+    def __init__(self, rows: int = 5, cols: int = 5, cell_size: int = 36,  presenter_mode=False):
         """
         Constructor de la ventana del juego.
 
@@ -71,6 +72,8 @@ class MazeGame(tk.Tk):
 
         # player: posición actual del jugador
         self.player: Cell = self.start
+        self.auto_play = False  # indica si se está ejecutando el movimiento automático (Boton1)
+
 
         # loaded_maze: si se carga un laberinto desde archivo, aquí se guarda su definición
         self.loaded_maze: Dict[str, Any] | None = None
@@ -86,6 +89,30 @@ class MazeGame(tk.Tk):
         self.current_steps: int = 0
         self.attempt_index: int = 1
         self.attempts_history: List[Dict[str, Any]] = []
+
+
+        # ------------------------------------------------------
+        # Configuracion visual
+        # ------------------------------------------------------
+        if presenter_mode:
+            # Pantalla completa
+            #self.attributes("-fullscreen", True)
+
+            # Fuentes grandes para público (tuplas, sin comillas)
+            self.font_title = ("Helvetica", 30, "bold")
+            self.font_normal = ("Helvetica", 26)
+            self.font_small = ("Helvetica", 26)
+
+            # Permitir salir de fullscreen con ESC
+            # self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
+        else:
+
+            # Fuentes más pequeñas para uso personal
+            self.font_title = ("Helvetica", 12, "bold")
+            self.font_normal = ("Helvetica", 12)
+            self.font_small = ("Helvetica", 10)
+
+
 
         # ---------------- Widgets principales ---------------- #
         # Canvas donde se dibuja el tablero
@@ -106,88 +133,90 @@ class MazeGame(tk.Tk):
             self.controls_frame,
             text="Mostrar camino",
             variable=self.show_path_var,
-            command=self.render
+            command=self.render,
+            font=self.font_normal
         )
         self.show_path_cb.grid(row=0, column=0, sticky="w")
 
         # Botón para generar un nuevo laberinto aleatorio
-        self.reset_btn = tk.Button(self.controls_frame, text="Nuevo aleatorio", command=self.new_random_maze)
+        self.reset_btn = tk.Button(self.controls_frame, text="Nuevo aleatorio", command=self.new_random_maze, font=self.font_normal)
         self.reset_btn.grid(row=0, column=1, sticky="w", padx=(5, 0))
 
         # Botón para iniciar un nuevo intento manteniendo el mismo laberinto
-        self.retry_btn = tk.Button(self.controls_frame, text="Intentar de nuevo", command=self.on_retry_clicked)
+        self.retry_btn = tk.Button(self.controls_frame, text="Intentar de nuevo", command=self.on_retry_clicked, font=self.font_normal)
         self.retry_btn.grid(row=0, column=2, sticky="w", padx=(5, 0))
 
         # Botón para cargar un laberinto desde JSON (creado por el editor)
-        self.load_btn = tk.Button(self.controls_frame, text="Cargar laberinto", command=self.load_maze_from_file)
+        self.load_btn = tk.Button(self.controls_frame, text="Cargar laberinto", command=self.load_maze_from_file, font=self.font_normal)
         self.load_btn.grid(row=0, column=3, sticky="w", padx=(5, 0))
-
-        # Etiqueta que muestra los golpes del intento actual
-        self.hits_var = tk.StringVar(value="Golpes intento: 0")
-        self.hits_lbl = tk.Label(self.controls_frame, textvariable=self.hits_var, font=("Helvetica", 11, "bold"))
-        self.hits_lbl.grid(row=0, column=4, sticky="w", padx=(10, 0))
 
         # Etiqueta que muestra el número de intento y los pasos actuales
         self.attempt_info_var = tk.StringVar(value="Intento 1 | Pasos: 0")
-        self.attempt_info_lbl = tk.Label(self.controls_frame, textvariable=self.attempt_info_var)
-        self.attempt_info_lbl.grid(row=0, column=5, sticky="w", padx=(10, 0))
+        self.attempt_info_lbl = tk.Label(self.controls_frame, textvariable=self.attempt_info_var, font=self.font_title)
+        self.attempt_info_lbl.grid(row=1, column=1, sticky="w", padx=(10, 0))
+
+        # Etiqueta que muestra los golpes del intento actual
+        self.hits_var = tk.StringVar(value="Golpes: 0")
+        self.hits_lbl = tk.Label(self.controls_frame, textvariable=self.hits_var, font=self.font_title)
+        self.hits_lbl.grid(row=1, column=2, sticky="w", padx=(10, 0))
+
 
         # ---------------- Panel derecho: tamaño, historial y botones extra ---------------- #
         self.side_frame = tk.Frame(self, bd=1, relief="groove")
         self.side_frame.grid(row=0, column=1, rowspan=2, sticky="ns", padx=(0, 10), pady=10)
 
         # --- Sección tamaño del tablero --- #
-        size_title = tk.Label(self.side_frame, text="Tamaño del tablero", font=("Helvetica", 10, "bold"))
+        size_title = tk.Label(self.side_frame, text="Tamaño del tablero", font=self.font_title)
         size_title.pack(anchor="w", padx=8, pady=(6, 2))
 
         size_frame = tk.Frame(self.side_frame)
         size_frame.pack(anchor="w", padx=8, pady=(0, 6))
 
-        tk.Label(size_frame, text="Filas (n):").grid(row=0, column=0, sticky="w")
-        tk.Label(size_frame, text="Columnas (m):").grid(row=1, column=0, sticky="w")
+        tk.Label(size_frame, text="Filas (n):", font=self.font_normal).grid(row=0, column=0, sticky="w")
+        tk.Label(size_frame, text="Columnas (m):", font=self.font_normal).grid(row=1, column=0, sticky="w")
 
         # rows_var / cols_var: variables ligadas a los Spinbox de tamaño
         self.rows_var = tk.IntVar(value=self.rows)
         self.cols_var = tk.IntVar(value=self.cols)
 
-        self.rows_spin = tk.Spinbox(size_frame, from_=2, to=50, width=5, textvariable=self.rows_var)
+        self.rows_spin = tk.Spinbox(size_frame, from_=2, to=50, width=5, textvariable=self.rows_var, font=self.font_normal)
         self.rows_spin.grid(row=0, column=1, sticky="w", padx=(4, 0))
 
-        self.cols_spin = tk.Spinbox(size_frame, from_=2, to=50, width=5, textvariable=self.cols_var)
+        self.cols_spin = tk.Spinbox(size_frame, from_=2, to=50, width=5, textvariable=self.cols_var, font=self.font_normal)
         self.cols_spin.grid(row=1, column=1, sticky="w", padx=(4, 0))
 
-        self.apply_size_btn = tk.Button(size_frame, text="Aplicar tamaño", command=self.on_apply_board_size)
+        self.apply_size_btn = tk.Button(size_frame, text="Aplicar tamaño", command=self.on_apply_board_size, font=self.font_normal)
         self.apply_size_btn.grid(row=2, column=0, columnspan=2, pady=(4, 0), sticky="we")
 
         # --- Sección historial de intentos --- #
-        history_title = tk.Label(self.side_frame, text="Historial de intentos", font=("Helvetica", 10, "bold"))
+        history_title = tk.Label(self.side_frame, text="Historial de intentos", font=self.font_title)
         history_title.pack(anchor="w", padx=8, pady=(8, 2))
 
         # Listbox donde se muestra el resumen de cada intento con capacidad de scroll con desplazamiento automático 
         self.history_scrollbar = tk.Scrollbar(self.side_frame, orient="vertical")
         self.history_scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=(0, 6))
-        self.history_listbox = tk.Listbox(self.side_frame, width=36, height=14, yscrollcommand=self.history_scrollbar.set)
+        self.history_listbox = tk.Listbox(self.side_frame, width=45, height=14, yscrollcommand=self.history_scrollbar.set, font=self.font_small)
         self.history_listbox.pack(anchor="w", padx=8, pady=(0, 6))
         self.history_scrollbar.config(command=self.history_listbox.yview)
 
         # Botón para limpiar el historial sin cambiar el laberinto
-        self.clear_history_btn = tk.Button(self.side_frame, text="Limpiar historial", command=self.clear_history)
+        self.clear_history_btn = tk.Button(self.side_frame, text="Limpiar historial", command=self.clear_history, font=self.font_normal)
         self.clear_history_btn.pack(anchor="w", padx=8, pady=(0, 8))
 
         # --- Botones extra (Boton1 ... Boton6) --- #
-        extra_title = tk.Label(self.side_frame, text="Botones extra", font=("Helvetica", 10, "bold"))
+        extra_title = tk.Label(self.side_frame, text="Botones extra", font=self.font_title)
         extra_title.pack(anchor="w", padx=8, pady=(4, 2))
 
         extra_btns_frame = tk.Frame(self.side_frame)
         extra_btns_frame.pack(anchor="w", padx=8, pady=(0, 8))
 
         # Boton1..Boton6 preparados para futuras funcionalidades
-        self.btn1 = tk.Button(extra_btns_frame, text="Boton1", width=10, command=self.on_boton1)
-        self.btn2 = tk.Button(extra_btns_frame, text="Boton2", width=10, command=self.on_boton2)
-        self.btn3 = tk.Button(extra_btns_frame, text="Boton3", width=10, command=self.on_boton3)
-        self.btn4 = tk.Button(extra_btns_frame, text="Boton4", width=10, command=self.on_boton4)
-        self.btn5 = tk.Button(extra_btns_frame, text="Boton5", width=10, command=self.on_boton5)
-        self.btn6 = tk.Button(extra_btns_frame, text="Boton6", width=10, command=self.on_boton6)
+        self.btn1 = tk.Button(extra_btns_frame, text="Random", width=10, command=self.on_boton1, font=self.font_normal)
+        self.btn2 = tk.Button(extra_btns_frame, text="Boton2", width=10, command=self.on_boton2, font=self.font_normal)
+        self.btn3 = tk.Button(extra_btns_frame, text="Boton3", width=10, command=self.on_boton3, font=self.font_normal)
+        self.btn4 = tk.Button(extra_btns_frame, text="Boton4", width=10, command=self.on_boton4, font=self.font_normal)
+        self.btn5 = tk.Button(extra_btns_frame, text="Boton5", width=10, command=self.on_boton5, font=self.font_normal)
+        self.btn6 = tk.Button(extra_btns_frame, text="Boton6", width=10, command=self.on_boton6, font=self.font_normal)
 
         # Distribución en dos columnas (3 filas x 2 columnas)
         self.btn1.grid(row=0, column=0, padx=2, pady=2, sticky="we")
@@ -215,6 +244,71 @@ class MazeGame(tk.Tk):
         self.render()
 
         self.update_idletasks()
+
+
+    # -----------------------------------------------------
+    # Renderizado del tablero
+    # -----------------------------------------------------
+
+
+    def render(self):
+        show_path = self.show_path_var.get()
+        
+        # Elegir set de colores según modo presentación
+        if getattr(self, "presentation_colors", True):
+            #print("Usando colores de presentación")
+            # ------------------ MODO PRESENTACIÓN ------------------
+            color_bg = "#ffffff"
+            color_wall = "#ffffff"
+            color_outline = "#555555"
+            color_path = "#bbbbbb"
+            color_start = "#76e6a4"
+            color_goal = "#fda744"
+            color_player = "#56bfdf"
+            color_player_outline = "#0d3c55"
+            self.canvas.config(bg=color_bg)
+        else:
+            # ------------------ MODO NORMAL ------------------------
+            color_bg = "#111"
+            color_wall = "#000"
+            color_outline = "#222"
+            color_path = "#2b2b2b"
+            color_start = "#2ecc71"
+            color_goal = "#f1c40f"
+            color_player = "#3498db"
+            color_player_outline = "#5faee3"
+            self.canvas.config(bg=color_bg)
+
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = (r, c)
+                rect = self.rect_by_cell.get(cell)
+                if rect is None:
+                    continue
+
+                fill = color_wall
+                outline = color_outline
+
+                if show_path and cell in self.path_set:
+                    fill = color_path
+
+                if cell == self.start:
+                    fill = color_start
+
+                if cell == self.goal:
+                    fill = color_goal
+
+                if cell == self.player:
+                    fill = color_player
+                    outline = color_player_outline
+
+                self.canvas.itemconfig(rect, fill=fill, outline=outline)
+
+        self.canvas.update_idletasks()
+
+
+
+
 
     # -----------------------------------------------------
     # Construcción de la grilla (rectángulos en el canvas)
@@ -496,22 +590,28 @@ class MazeGame(tk.Tk):
         if not (0 <= nr < self.rows and 0 <= nc < self.cols):
             self.register_hit()
             # Se puede parpadear la celda actual para indicar el choque
-            self.flash_cell(self.player, color="#a00")
-            return
+            self.flash_cell(self.player, color="#ff0000")
+            return 
 
         # Caso 2: dentro del tablero pero fuera del camino -> golpe (pared invisible)
         if nxt not in self.path_set:
             self.register_hit()
-            self.flash_cell(self.player, color="#a00")
-            return
+            self.flash_cell(self.player, color="#ff0000")
+            return 
 
         # Caso 3: movimiento válido sobre el camino
         self.player = nxt
         self.render()
 
+    
+
         # Comprobar si se llegó a la meta
         if self.player == self.goal:
-            self.on_win()
+            # Si NO está en modo automático, se gestiona la victoria normalmente
+            if not getattr(self, "auto_play", False):
+                self.on_win()
+                return
+     
 
     def register_hit(self):
         """
@@ -559,16 +659,16 @@ class MazeGame(tk.Tk):
         messagebox.showinfo(
             "¡Llegaste!",
             f"Has alcanzado la meta.\n"
-            f"Golpes en este intento: {golpes}\n"
-            f"Pasos en este intento: {pasos}"
-        )
 
+            
+        )
+        self.start_new_attempt()
         # Reiniciar manteniendo el mismo laberinto si fue cargado,
         # o generando uno nuevo en caso contrario.
-        if self.loaded_maze is not None:
-            self.apply_loaded_maze(self.loaded_maze)
-        else:
-            self.new_random_maze()
+        #if self.loaded_maze is not None:
+        #    self.apply_loaded_maze(self.loaded_maze)
+        #else:
+        #    self.new_random_maze()
 
     # -----------------------------------------------------
     # Gestión de intentos e historial
@@ -648,7 +748,7 @@ class MazeGame(tk.Tk):
         """
         Actualiza el texto de la etiqueta de golpes del intento actual.
         """
-        self.hits_var.set(f"Golpes intento: {self.current_hits}")
+        self.hits_var.set(f"Golpes: {self.current_hits}")
 
     def update_attempt_info_label(self):
         """
@@ -657,50 +757,9 @@ class MazeGame(tk.Tk):
         """
         self.attempt_info_var.set(f"Intento {self.attempt_index} | Pasos: {self.current_steps}")
 
-    # -----------------------------------------------------
-    # Renderizado del tablero
-    # -----------------------------------------------------
-    def render(self):
-        """
-        Redibuja las celdas del tablero en el canvas.
+    
 
-        Comportamiento:
-        - Si 'Mostrar camino' está activado, las celdas del camino se muestran en gris.
-        - La celda de inicio es verde, la de meta es amarilla.
-        - La celda del jugador se muestra en azul.
-        """
-        show_path = self.show_path_var.get()
-        for r in range(self.rows):
-            for c in range(self.cols):
-                cell = (r, c)
-                rect = self.rect_by_cell.get(cell)
-                if rect is None:
-                    continue
-
-                # color por defecto: negro
-                fill = "#000"
-                outline = "#222"
-
-                # Mostrar camino si está activado
-                if show_path and cell in self.path_set:
-                    fill = "#2b2b2b"  # camino en gris
-
-                # Inicio y meta
-                if cell == self.start:
-                    fill = "#2ecc71"  # verde
-                if cell == self.goal:
-                    fill = "#f1c40f"  # amarillo
-
-                # Jugador por encima de todo
-                if cell == self.player:
-                    fill = "#3498db"  # azul
-                    outline = "#5faee3"
-
-                self.canvas.itemconfig(rect, fill=fill, outline=outline)
-
-        self.canvas.update_idletasks()
-
-    def flash_cell(self, cell: Cell, color: str = "#a00", flashes: int = 1, delay_ms: int = 60):
+    def flash_cell(self, cell: Cell, color: str = "#ff0000", flashes: int = 1, delay_ms: int = 70):
         """
         Hace parpadear una celda del tablero con un color dado para indicar un evento
         (por ejemplo, un golpe contra una pared invisible).
@@ -723,47 +782,133 @@ class MazeGame(tk.Tk):
             self.canvas.update_idletasks()
             self.after(delay_ms)
 
+
+    """
+    Extra Buttons Functionality (Stubs) *************************************************************************************
+    Extra Buttons Functionality (Stubs) *************************************************************************************
+    Extra Buttons Functionality (Stubs) *************************************************************************************
+
+    """
     # -----------------------------------------------------
     # Botones extra (Boton1 ... Boton6) - stubs
     # -----------------------------------------------------
     def on_boton1(self):
         """
-        Espacio reservado para la funcionalidad futura asociada a Boton1.
+        Ejecución automática de movimientos aleatorios hasta llegar a la meta.
         """
-        # loop infinito de movimientos aleatorios como ejemplo
-        while True:
-            movement = random.randint(0, 3)
-            match movement:
-                case 0:  # Up
-                    self.try_move((-1, 0))
-                    self.history_listbox.insert(tk.END, "UP")
-                case 1:  # Right
-                    self.try_move((0, 1))
-                    self.history_listbox.insert(tk.END, "RIGHT")
-                case 2:  # Down
-                    self.try_move((1, 0))
-                    self.history_listbox.insert(tk.END, "DOWN")
-                case 3:  # Left
-                    self.try_move((0, -1))
-                    self.history_listbox.insert(tk.END, "LEFT")
-            
-            self.history_listbox.see(tk.END)
-            # pausa para ver los movimientos    
-            self.update()
-            self.after(200) 
-            # Chequeo si llegó a la meta para salir del loop
-            if self.player == self.goal:
-                print("Llegó a la meta")
-                break
-            
+        self.auto_play = True
+        try:
+            while True:
+                movement = random.randint(0, 3)
+                match movement:
+                    case 0:  # Up
+                        self.try_move((-1, 0))
+                        self.history_listbox.insert(tk.END, "UP")
+                    case 1:  # Right
+                        self.try_move((0, 1))
+                        self.history_listbox.insert(tk.END, "RIGHT")
+                    case 2:  # Down
+                        self.try_move((1, 0))
+                        self.history_listbox.insert(tk.END, "DOWN")
+                    case 3:  # Left
+                        self.try_move((0, -1))
+                        self.history_listbox.insert(tk.END, "LEFT")
 
-        #messagebox.showinfo("Boton1", "Espacio reservado para una función futura (Boton1).")
+                self.history_listbox.see(tk.END)
+                self.update()
+                self.after(200)
+
+                # Chequeo si llegó a la meta para salir del loop
+                if self.player == self.goal:
+                    #print("Llegó a la meta")
+                    # Ahora sí, se puede ejecutar la lógica de victoria
+                    self.auto_play = False  # se desactiva antes de llamar a on_win
+                    self.on_win()
+                    break
+        finally:
+            # Asegurarse de que el flag queda apagado aunque ocurra algún error
+            self.auto_play = False
 
     def on_boton2(self):
         """
-        Espacio reservado para la funcionalidad futura asociada a Boton2.
+        Estrategia:
+        - enabled_moves = [0, 1, 2, 3] (UP, RIGHT, DOWN, LEFT).
+        - En cada paso se elige un movimiento al azar entre enabled_moves.
+        - Si el movimiento es inválido (golpe contra pared):
+            -> se elimina ese movimiento de enabled_moves (para esa casilla).
+        - Si el movimiento es válido:
+            -> se reconstruye enabled_moves con todas las direcciones
+            menos la contraria al movimiento recién usado.
         """
-        messagebox.showinfo("Boton2", "Espacio reservado para una función futura (Boton2).")
+
+        import random
+
+        # 0: UP, 1: RIGHT, 2: DOWN, 3: LEFT
+        enabled_moves = [0, 1, 2, 3]
+
+        move_to_delta = {
+            0: (-1, 0),  # UP
+            1: (0, 1),   # RIGHT
+            2: (1, 0),   # DOWN
+            3: (0, -1),  # LEFT
+        }
+
+        move_to_name = {
+            0: "UP",
+            1: "RIGHT",
+            2: "DOWN",
+            3: "LEFT",
+        }
+
+        # Movimiento opuesto: 0 <-> 2, 1 <-> 3
+        opposite = {
+            0: 2,
+            1: 3,
+            2: 0,
+            3: 1,
+        }
+
+        # Bucle principal: se detiene si no hay más movimientos posibles
+        # o si se llega a la meta.
+        self.auto_play = True
+        try:
+            while enabled_moves and self.player != self.goal:
+                move = random.choice(enabled_moves)
+                delta = move_to_delta[move]
+
+                old_pos = self.player
+                self.try_move(delta)
+                new_pos = self.player
+
+                # Registrar movimiento en historial
+                self.history_listbox.insert(tk.END, move_to_name[move])
+                self.history_listbox.see(tk.END)
+
+                # Animación
+                self.update()
+                self.after(200)
+
+                moved = (new_pos != old_pos)
+
+                if moved:
+                    # Movimiento válido:
+                    # desde la nueva posición, se reabre TODO excepto el opuesto
+                    opp = opposite[move]
+                    enabled_moves = [m for m in [0, 1, 2, 3] if m != opp]
+                else:
+                    # Movimiento inválido (golpe):
+                    # se elimina SOLO esta dirección, se siguen intentando las otras
+                    enabled_moves = [m for m in enabled_moves if m != move]
+
+                # Por si se llega a la meta dentro de try_move con alguna lógica adicional
+                if self.player == self.goal:
+                    self.auto_play = False  # se desactiva antes de llamar a on_win
+                    self.on_win()
+                    break
+        finally:
+            # Asegurarse de que el flag queda apagado aunque ocurra algún error
+            self.auto_play = False
+
 
     def on_boton3(self):
         """
@@ -1030,39 +1175,7 @@ class PathEditorGame(tk.Tk):
         self.player = self.start
         self.render()
 
-    def render(self):
-        """
-        Redibuja la grilla del editor, mostrando:
-        - Estela gris donde se ha pasado.
-        - Inicio verde.
-        - Meta amarilla.
-        - Jugador azul.
-        """
-        for r in range(self.rows):
-            for c in range(self.cols):
-                cell = (r, c)
-                rect = self.rect_by_cell.get(cell)
-                if rect is None:
-                    continue
 
-                fill = "#000"
-                outline = "#222"
-
-                if cell in self.trail_set:
-                    fill = "#2b2b2b"  # trail en gris
-
-                if cell == self.start:
-                    fill = "#2ecc71"  # inicio verde
-                if cell == self.goal:
-                    fill = "#f1c40f"  # meta amarilla
-
-                if cell == self.player:
-                    fill = "#3498db"  # jugador azul
-                    outline = "#5faee3"
-
-                self.canvas.itemconfig(rect, fill=fill, outline=outline)
-
-        self.canvas.update_idletasks()
 
 
 # =========================================================
@@ -1077,9 +1190,15 @@ def main():
     de MazeGame y descomentar la de PathEditorGame.
     """
     # Modo juego (solicitudes del usuario aplicadas aquí):
-    app = MazeGame(rows=5, cols=5, cell_size=36)
-    app.mainloop()
+    presenter = 1
 
+
+    if presenter == 0:
+        app = MazeGame(rows=5, cols=5, cell_size=40, presenter_mode=False)
+        app.mainloop()
+    else:
+        app = MazeGame(rows=4, cols=5, cell_size=160, presenter_mode=True)
+        app.mainloop()
     # Modo editor (opcional, si se quiere ejecutar el editor por separado):
     # editor = PathEditorGame(rows=7, cols=7, cell_size=36)
     # editor.mainloop()

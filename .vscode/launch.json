@@ -5,11 +5,8 @@
             "name": "Debug viewer_with_walls",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/Spanish/viewer_with_walls.py",
-            "args": [
-                "--model", "Spanish/model_PPO_02_path7x7_20251106.zip",
-                "--json", "Spanish/paths/path7x7_20251106.json"
-            ]
+            "program": "${workspaceFolder}/v2.0/maze2.1.py",
+
         }
     ]
 }

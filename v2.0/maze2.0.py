@@ -1335,7 +1335,7 @@ def main():
     de MazeGame y descomentar la de PathEditorGame.
     """
     # Modo juego (solicitudes del usuario aplicadas aquí):
-    presenter = 1
+    presenter = 0
 
 
     if presenter == 0:

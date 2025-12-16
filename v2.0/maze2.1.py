@@ -199,7 +199,7 @@ class MazeGame(tk.Tk):
         # Listbox showing a summary of each attempt with a scrollbar and auto-scroll
         self.history_scrollbar = tk.Scrollbar(self.side_frame, orient="vertical")
         self.history_scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=(0, 6))
-        self.history_listbox = tk.Listbox(self.side_frame, width=45, height=14, yscrollcommand=self.history_scrollbar.set, font=self.font_small)
+        self.history_listbox = tk.Listbox(self.side_frame, width=40, height=14, yscrollcommand=self.history_scrollbar.set, font=self.font_small)
         self.history_listbox.pack(anchor="w", padx=8, pady=(0, 6))
         self.history_scrollbar.config(command=self.history_listbox.yview)
 
@@ -968,10 +968,6 @@ class MazeGame(tk.Tk):
                 old_pos = self.player
                 self.try_move(delta)
                 new_pos = self.player
-
-                # Log move in history
-                self.history_listbox.insert(tk.END, move_to_name[move])
-                self.history_listbox.see(tk.END)
 
                 # Animation
                 self.update()
